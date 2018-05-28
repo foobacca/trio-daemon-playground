@@ -35,10 +35,12 @@ async def runner(runner_count, xyz, cancel_event):
         if cancel_event.is_set():
             return
         print('runner number {}, count {}: {}'.format(runner_count, iter_count, xyz))
-        await trio.sleep(SLEEP_TIME)
+        with trio.move_on_after(SLEEP_TIME):
+            await cancel_event.wait()
+            print("I've been killed ({}).".format(xyz))
 
 
-class Daemon(object):
+class Daemon:
 
     def __init__(self):
         self.runner_count = 0
