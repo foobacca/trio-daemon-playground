@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "65f353401ac657ed3cef69207f251ed9a00964f48f9fa0ae33ec7de206f08871"
+            "sha256": "5d6003daf63f67a273ffb4de9f96d5ab226affbeb228cc000af1c68dfe92d20d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -36,6 +36,13 @@
             ],
             "markers": "python_version < '3.7'",
             "version": "==2.2"
+        },
+        "curio": {
+            "hashes": [
+                "sha256:51d1a7b49b4f8dd1486ac785c72d522962e93ccfdcfc1f818f5c7553a307b5ef"
+            ],
+            "index": "pypi",
+            "version": "==0.9"
         },
         "idna": {
             "hashes": [
