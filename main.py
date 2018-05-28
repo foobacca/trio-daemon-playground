@@ -31,10 +31,10 @@ async def runner(runner_count, xyz, cancel_event):
     """
     print every 10 seconds for 5 minutes
     """
-    for iter_count in range(300//SLEEP_TIME):
+    for iter_count in range(300 // SLEEP_TIME):
         if cancel_event.is_set():
             return
-        print('runner number {}, count {}: {}'.format(runner_count, iter_count, xyz))
+        print("runner number {}, count {}: {}".format(runner_count, iter_count, xyz))
         with trio.move_on_after(SLEEP_TIME):
             await cancel_event.wait()
             print("I've been killed ({}).".format(xyz))
@@ -56,43 +56,46 @@ class Daemon:
     def process_start(self, job_name):
         self.clean_runners()
         if job_name in self.runners:
-            print('Job with name {} already running'.format(job_name))
+            print("Job with name {} already running".format(job_name))
             return
-        print('starting job: {} (runner count {})'.format(job_name, self.runner_count))
-        self.runners[job_name] = {
-            'count': self.runner_count,
-            'cancel': trio.Event()
-        }
-        self.nursery.start_soon(runner, self.runner_count, job_name, self.runners[job_name]['cancel'], name=job_name)
+        print("starting job: {} (runner count {})".format(job_name, self.runner_count))
+        self.runners[job_name] = {"count": self.runner_count, "cancel": trio.Event()}
+        self.nursery.start_soon(
+            runner,
+            self.runner_count,
+            job_name,
+            self.runners[job_name]["cancel"],
+            name=job_name,
+        )
         self.runner_count += 1
 
     def process_status(self):
         self.clean_runners()
-        print('status is ...')
+        print("status is ...")
         for task in self.nursery.child_tasks:
-            print('  {} is running'.format(task.name))
+            print("  {} is running".format(task.name))
         print()
 
     def process_kill(self, job_name):
         self.clean_runners()
         if job_name not in self.runners:
-            print('Job {} not running!'.format(job_name))
+            print("Job {} not running!".format(job_name))
             return
-        print('killing job: {}'.format(job_name))
-        self.runners[job_name]['cancel'].set()
+        print("killing job: {}".format(job_name))
+        self.runners[job_name]["cancel"].set()
 
     def process_stop(self):
-        print('stop daemon and exit')
+        print("stop daemon and exit")
         self.nursery.cancel_scope.cancel()
         raise StopDaemon()
 
     @property
     def command_processors(self):
         return {
-            'start': self.process_start,
-            'status': self.process_status,
-            'kill': self.process_kill,
-            'stop': self.process_stop
+            "start": self.process_start,
+            "status": self.process_status,
+            "kill": self.process_kill,
+            "stop": self.process_stop,
         }
 
     def process_command(self, command):
@@ -101,20 +104,22 @@ class Daemon:
             return
         first_word = command_words[0]
         if first_word not in self.command_processors:
-            raise InvalidCommandError('Invalid command: {}'.format(first_word))
+            raise InvalidCommandError("Invalid command: {}".format(first_word))
         self.command_processors[first_word](*command_words[1:])
 
     async def main(self, argv):
         async with trio.open_nursery() as self.nursery:
             while True:
                 try:
-                    command = await trio.run_sync_in_worker_thread(input, 'Enter command: ')
+                    command = await trio.run_sync_in_worker_thread(
+                        input, "Enter command: "
+                    )
                 except EOFError:
-                    command = 'stop'
+                    command = "stop"
                 try:
                     self.process_command(command)
                 except InvalidCommandError as error:
-                    print('Invalid command: {}'.format(error))
+                    print("Invalid command: {}".format(error))
                 except StopDaemon:
                     break
         return 0
@@ -125,5 +130,5 @@ def main(argv):
     return trio.run(daemon.main, argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
