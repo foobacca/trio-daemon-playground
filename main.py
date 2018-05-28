@@ -27,17 +27,31 @@ class InvalidCommandError(Exception):
     pass
 
 
-async def runner(runner_count, xyz, cancel_event):
-    """
-    print every 10 seconds for 5 minutes
-    """
-    for iter_count in range(300 // SLEEP_TIME):
-        if cancel_event.is_set():
-            return
-        print("runner number {}, count {}: {}".format(runner_count, iter_count, xyz))
-        with trio.move_on_after(SLEEP_TIME):
-            await cancel_event.wait()
-            print("I've been killed ({}).".format(xyz))
+class Runner:
+    sleep_time = 5
+
+    def __init__(self, runner_count, xyz):
+        self.cancel_event = trio.Event()
+        self.runner_count = runner_count
+        self.xyz = xyz
+
+    async def run(self):
+        """
+        print every 10 seconds for 5 minutes
+        """
+        for iter_count in range(300 // self.sleep_time):
+            print(
+                "runner number {}, count {}: {}".format(
+                    self.runner_count, iter_count, self.xyz
+                )
+            )
+            with trio.move_on_after(self.sleep_time):
+                await self.cancel_event.wait()
+                print("I've been killed ({}).".format(self.xyz))
+                return
+
+    def cancel(self):
+        self.cancel_event.set()
 
 
 class Daemon:
@@ -59,14 +73,8 @@ class Daemon:
             print("Job with name {} already running".format(job_name))
             return
         print("starting job: {} (runner count {})".format(job_name, self.runner_count))
-        self.runners[job_name] = {"count": self.runner_count, "cancel": trio.Event()}
-        self.nursery.start_soon(
-            runner,
-            self.runner_count,
-            job_name,
-            self.runners[job_name]["cancel"],
-            name=job_name,
-        )
+        self.runners[job_name] = Runner(self.runner_count, job_name)
+        self.nursery.start_soon(self.runners[job_name].run, name=job_name)
         self.runner_count += 1
 
     def process_status(self):
@@ -82,7 +90,7 @@ class Daemon:
             print("Job {} not running!".format(job_name))
             return
         print("killing job: {}".format(job_name))
-        self.runners[job_name]["cancel"].set()
+        self.runners[job_name].cancel()
 
     def process_stop(self):
         print("stop daemon and exit")
