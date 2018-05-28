@@ -26,6 +26,8 @@ class InvalidCommandError(Exception):
 
 class Runner:
     sleep_time = 5
+    total_run_time = 300
+    num_iterations = total_run_time // sleep_time
 
     def __init__(self, runner_count, xyz):
         self.cancel_event = trio.Event()
@@ -36,7 +38,7 @@ class Runner:
         """
         print every 10 seconds for 5 minutes
         """
-        for iter_count in range(300 // self.sleep_time):
+        for iter_count in range(self.num_iterations):
             print(
                 "runner number {}, count {}: {}".format(
                     self.runner_count, iter_count, self.xyz
