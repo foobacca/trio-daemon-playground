@@ -16,9 +16,6 @@ import sys
 import trio
 
 
-SLEEP_TIME = 5
-
-
 class StopDaemon(Exception):
     pass
 
